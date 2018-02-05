@@ -27,7 +27,10 @@ class DistanceVector(Node):
 
         super(DistanceVector, self).__init__(name, topolink, outgoing_links, incoming_links)
         
-        #TODO: Create any necessary data structure(s) to contain the Node's internal state / distance vector data    
+        #TODO: Create any necessary data structure(s) to contain the Node's internal state / distance vector data
+
+        self.vector = dict()
+        self.vector[self.name] = dict() 
     
 
     def send_initial_messages(self):
@@ -41,6 +44,10 @@ class DistanceVector(Node):
 
         # TODO - Each node needs to build a message and send it to each of its neighbors
         # HINT: Take a look at the skeleton methods provided for you in Node.py
+
+        message = self.name + str(0)
+        for l in self.incoming_links:
+            self.send_msg(message,l)
 
 
     def process_BF(self):
@@ -71,5 +78,13 @@ class DistanceVector(Node):
         NOTE: A0 shows that the distance to self is 0 '''
         
         # TODO: Use the provided helper function add_entry() to accomplish this task (see helpers.py).
-        # An example call that which prints the format example text above (hardcoded) is provided.        
+        # An example call that which prints the format example text above (hardcoded) is provided.   
+
+        message = ""     
+        for v in self.vector:
+            message += str(v) + str(self.vector[v]) + ","
+        message = message[:-2]
+
+        print(message)
+        
         add_entry("A", "A0,B1,C2")        
