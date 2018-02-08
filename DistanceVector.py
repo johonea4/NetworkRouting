@@ -30,7 +30,14 @@ class DistanceVector(Node):
         #TODO: Create any necessary data structure(s) to contain the Node's internal state / distance vector data
 
         self.vector = dict()
-        self.vector[self.name] = dict() 
+        self.vector[self.name] = 0
+        self.outs = dict()
+        self.ins = dict()
+
+        for l in outgoing_links:
+            self.outs[l.name] = l
+        for l in incoming_links:
+            self.ins[l.name] = l
     
 
     def send_initial_messages(self):
@@ -45,9 +52,12 @@ class DistanceVector(Node):
         # TODO - Each node needs to build a message and send it to each of its neighbors
         # HINT: Take a look at the skeleton methods provided for you in Node.py
 
-        message = self.name + str(0)
+        #message = self.name + str(0)
         for l in self.incoming_links:
-            self.send_msg(message,l)
+            message=dict()
+            message['host'] = self.name
+            message['vector'] = self.vector
+            self.send_msg(message,l.name)
 
 
     def process_BF(self):
@@ -57,14 +67,35 @@ class DistanceVector(Node):
 
         # Implement the Bellman-Ford algorithm here.  It must accomplish two tasks below:
         # TODO 1. Process queued messages       
+        vectorChanged = False
         for msg in self.messages:            
-            pass
+            for node in msg['vector']:
+                if node == self.name:
+                    continue
+                if node in self.vector: 
+                    if self.vector[node] > -99 and msg['vector'][node] <= -99:
+                        self.vector[node] = -99
+                        vectorChanged = True
+                    elif self.vector[node] > -99:                        
+                        if (msg['vector'][node] + int(self.outs[msg['host']].weight)) < self.vector[node]:
+                            self.vector[node] = msg['vector'][node] + int(self.outs[msg['host']].weight)
+                            vectorChanged = True
+                else:
+                    self.vector[node] = msg['vector'][node] + int(self.outs[msg['host']].weight) 
+                    vectorChanged = True
+                
+                
         
         # Empty queue
         self.messages = []
 
         # TODO 2. Send neighbors updated distances               
-
+        if vectorChanged:
+            for l in self.incoming_links:
+                message=dict()
+                message['host'] = self.name
+                message['vector'] = self.vector
+                self.send_msg(message,l.name)
 
     def log_distances(self):
         ''' This function is called immedately after process_BF each round.  It 
@@ -79,12 +110,9 @@ class DistanceVector(Node):
         
         # TODO: Use the provided helper function add_entry() to accomplish this task (see helpers.py).
         # An example call that which prints the format example text above (hardcoded) is provided.   
-
-        message = ""     
+        message = ""
         for v in self.vector:
             message += str(v) + str(self.vector[v]) + ","
-        message = message[:-2]
-
-        print(message)
-        
-        add_entry("A", "A0,B1,C2")        
+        if len(message) > 0:
+            message = message[:-1]
+        add_entry(self.name, message)        
